@@ -812,7 +812,18 @@ void Sema::ProcessAPINotes(Decl *D) {
 
   // Globals.
   if (D->getDeclContext()->isFileContext() ||
+      D->getDeclContext()->isNamespace() ||
       D->getDeclContext()->isExternCContext()) {
+    std::optional<api_notes::Context> APINotesContext;
+    if (auto NamespaceContext = dyn_cast<NamespaceDecl>(D->getDeclContext())) {
+      for (auto Reader :
+           APINotes.findAPINotes(NamespaceContext->getLocation())) {
+        if (auto id = Reader->lookupNamespaceID(NamespaceContext->getName())) {
+          APINotesContext = {*id, api_notes::ContextKind::Namespace};
+        }
+      }
+    }
+
     // Global variables.
     if (auto VD = dyn_cast<VarDecl>(D)) {
       for (auto Reader : APINotes.findAPINotes(D->getLocation())) {
@@ -882,7 +893,7 @@ void Sema::ProcessAPINotes(Decl *D) {
       }
 
       for (auto Reader : APINotes.findAPINotes(D->getLocation())) {
-        auto Info = Reader->lookupTag(LookupName);
+        auto Info = Reader->lookupTag(APINotesContext, LookupName);
         ProcessVersionedAPINotes(*this, Tag, Info);
       }
 
@@ -892,7 +903,7 @@ void Sema::ProcessAPINotes(Decl *D) {
     // Typedefs
     if (auto Typedef = dyn_cast<TypedefNameDecl>(D)) {
       for (auto Reader : APINotes.findAPINotes(D->getLocation())) {
-        auto Info = Reader->lookupTypedef(Typedef->getName());
+        auto Info = Reader->lookupTypedef(APINotesContext, Typedef->getName());
         ProcessVersionedAPINotes(*this, Typedef, Info);
       }
 
