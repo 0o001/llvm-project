@@ -17,3 +17,7 @@ module ModuleWithWrongCase {
 module ModuleWithWrongCasePrivate {
   header "ModuleWithWrongCasePrivate.h"
 }
+
+module Namespaces {
+  header "Namespaces.h"
+}
